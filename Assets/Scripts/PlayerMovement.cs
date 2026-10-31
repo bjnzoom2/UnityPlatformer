@@ -26,12 +26,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
-
+        
     }
 
     private void Update()
     {
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
+
         if (!hasJumped)
         {
             hasJumped = inputs.Player.Jump.WasPressedThisFrame();
@@ -47,7 +48,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (hasJumped)
         {
-            rigidBody.linearVelocityY = jumpPower;
+            rigidBody.AddForceY(jumpPower, ForceMode2D.Impulse);
             hasJumped = false;
         }
     }
