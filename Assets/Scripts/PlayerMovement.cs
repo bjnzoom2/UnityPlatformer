@@ -2,20 +2,24 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [SerializeField] private LayerMask groundLayer;
     private Rigidbody2D rigidBody;
+    private BoxCollider2D collider;
     private GameInputs inputs;
 
     private float targetPlayerSpeed = 8.0f;
-    private float jumpPower = 10.0f;
+    private float jumpPower = 14.0f;
     private float xVelocity = 0.0f;
     private float accelTime = 0.1f;
 
     private float horizontalInput;
     private bool hasJumped = false;
+    private bool canJump = false;
 
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
+        collider = GetComponent<BoxCollider2D>();
         inputs = new GameInputs();
     }
 
@@ -33,7 +37,19 @@ public class PlayerMovement : MonoBehaviour
     {
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
 
-        if (!hasJumped)
+        float raylength = 0.1f;
+        RaycastHit2D hit = Physics2D.Raycast(new Vector2(collider.bounds.center.x, collider.bounds.center.y - collider.bounds.extents.y), Vector2.down, raylength, groundLayer);
+        Debug.DrawRay(new Vector2(collider.bounds.center.x, collider.bounds.center.y - collider.bounds.extents.y), Vector2.down * raylength, Color.red);
+
+        if (hit.collider != null && rigidBody.linearVelocityY <= 0.05f)
+        {
+            canJump = true;
+        } else
+        {
+            canJump = false;
+        }
+
+        if (!hasJumped && canJump)
         {
             hasJumped = inputs.Player.Jump.WasPressedThisFrame();
         }
