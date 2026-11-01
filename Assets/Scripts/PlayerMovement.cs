@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -14,8 +15,9 @@ public class PlayerMovement : MonoBehaviour
 
     private float horizontalInput;
     private bool hasJumped = false;
-    private bool canJump = false;
+    private bool isGrounded = false;
     private bool jumpCutOff = false;
+    private bool jumpBufferActivated = false;
 
     private void Awake()
     {
@@ -38,24 +40,24 @@ public class PlayerMovement : MonoBehaviour
     {
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
 
-        float raylength = 0.1f;
+        float raylength = 0.01f;
         RaycastHit2D hit = Physics2D.BoxCast(collider.bounds.center, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, raylength + collider.bounds.extents.y, groundLayer);
         Debug.DrawRay(collider.bounds.center, Vector2.down * (raylength + collider.bounds.extents.y), Color.red);
 
         if (hit.collider != null && rigidBody.linearVelocityY <= 0.05f)
         {
-            canJump = true;
+            isGrounded = true;
         } else
         {
-            canJump = false;
+            isGrounded = false;
         }
 
-        if (!hasJumped && canJump)
+        if (!hasJumped)
         {
             hasJumped = inputs.Player.Jump.WasPressedThisFrame();
         }
 
-        if (!jumpCutOff && !canJump)
+        if (!jumpCutOff && !isGrounded)
         {
             jumpCutOff = (inputs.Player.Jump.WasReleasedThisFrame() && rigidBody.linearVelocityY > 0.0f);
         }
@@ -70,8 +72,15 @@ public class PlayerMovement : MonoBehaviour
 
         if (hasJumped)
         {
-            rigidBody.AddForceY(jumpPower, ForceMode2D.Impulse);
             hasJumped = false;
+            if (isGrounded && !jumpBufferActivated)
+            {
+                Jump();
+            } else if (!jumpBufferActivated)
+            {
+                jumpBufferActivated = true;
+                StartCoroutine(JumpBuffer());
+            }
         }
 
         if (jumpCutOff)
@@ -79,5 +88,31 @@ public class PlayerMovement : MonoBehaviour
             rigidBody.linearVelocityY *= 0.6f;
             jumpCutOff = false;
         }
+    }
+
+    private void Jump()
+    {
+        rigidBody.AddForceY(jumpPower, ForceMode2D.Impulse);
+    }
+
+    private IEnumerator JumpBuffer()
+    {
+        float jumpBufferTimer = 0.0f;
+        float jumpBufferDuration = 0.1f;
+
+        while (jumpBufferTimer < jumpBufferDuration)
+        {
+            if (isGrounded)
+            {
+                Jump();
+                jumpBufferActivated = false;
+                yield break;
+            }
+
+            jumpBufferTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        jumpBufferActivated = false;
     }
 }
