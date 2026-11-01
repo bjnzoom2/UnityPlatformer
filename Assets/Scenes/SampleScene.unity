@@ -516,6 +516,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3aeee45feed22084bb317335c9f90806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!61 &929619094
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -578,7 +581,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 2.5
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: e044fbd38a6bdaa4390f12dc6f214498, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -587,8 +590,8 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 1
   m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!1 &967197942
 GameObject:
   m_ObjectHideFlags: 0
@@ -600,7 +603,7 @@ GameObject:
   - component: {fileID: 967197944}
   - component: {fileID: 967197943}
   - component: {fileID: 967197945}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -60,7 +60,7 @@ public class PlayerMovement : MonoBehaviour
         xVelocity = rigidBody.linearVelocityX;
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
         xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
-        rigidBody.linearVelocityX = xVelocity;
+        rigidBody.linearVelocity = new Vector2(xVelocity, rigidBody.linearVelocityY);
 
         if (hasJumped)
         {
