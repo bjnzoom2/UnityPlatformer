@@ -8,13 +8,14 @@ public class PlayerMovement : MonoBehaviour
     private GameInputs inputs;
 
     private float targetPlayerSpeed = 8.0f;
-    private float jumpPower = 14.0f;
+    private float jumpPower = 16.0f;
     private float xVelocity = 0.0f;
     private float accelTime = 0.1f;
 
     private float horizontalInput;
     private bool hasJumped = false;
     private bool canJump = false;
+    private bool jumpCutOff = false;
 
     private void Awake()
     {
@@ -53,6 +54,11 @@ public class PlayerMovement : MonoBehaviour
         {
             hasJumped = inputs.Player.Jump.WasPressedThisFrame();
         }
+
+        if (!jumpCutOff && !canJump)
+        {
+            jumpCutOff = (inputs.Player.Jump.WasReleasedThisFrame() && rigidBody.linearVelocityY > 0.0f);
+        }
     }
 
     private void FixedUpdate()
@@ -60,12 +66,18 @@ public class PlayerMovement : MonoBehaviour
         xVelocity = rigidBody.linearVelocityX;
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
         xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
-        rigidBody.linearVelocity = new Vector2(xVelocity, rigidBody.linearVelocityY);
+        rigidBody.linearVelocityX = xVelocity;
 
         if (hasJumped)
         {
             rigidBody.AddForceY(jumpPower, ForceMode2D.Impulse);
             hasJumped = false;
+        }
+
+        if (jumpCutOff)
+        {
+            rigidBody.linearVelocityY *= 0.5f;
+            jumpCutOff = false;
         }
     }
 }
