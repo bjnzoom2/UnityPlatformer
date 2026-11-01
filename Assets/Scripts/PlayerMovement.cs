@@ -39,8 +39,8 @@ public class PlayerMovement : MonoBehaviour
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
 
         float raylength = 0.1f;
-        RaycastHit2D hit = Physics2D.Raycast(new Vector2(collider.bounds.center.x, collider.bounds.center.y - collider.bounds.extents.y), Vector2.down, raylength, groundLayer);
-        Debug.DrawRay(new Vector2(collider.bounds.center.x, collider.bounds.center.y - collider.bounds.extents.y), Vector2.down * raylength, Color.red);
+        RaycastHit2D hit = Physics2D.BoxCast(collider.bounds.center, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, raylength + collider.bounds.extents.y, groundLayer);
+        Debug.DrawRay(collider.bounds.center, Vector2.down * (raylength + collider.bounds.extents.y), Color.red);
 
         if (hit.collider != null && rigidBody.linearVelocityY <= 0.05f)
         {
@@ -76,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (jumpCutOff)
         {
-            rigidBody.linearVelocityY *= 0.5f;
+            rigidBody.linearVelocityY *= 0.6f;
             jumpCutOff = false;
         }
     }
