@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.ParticleSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -119,8 +120,9 @@ public class PlayerMovement : MonoBehaviour
     #endregion
 
     private Rigidbody2D rigidBody;
+    private BoxCollider2D collider;
     private GameInputs inputs;
-    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private LayerMask solidsLayer;
 
     private float targetPlayerSpeed = 8.0f;
     private float horizontalInput;
@@ -132,12 +134,10 @@ public class PlayerMovement : MonoBehaviour
     private float xDeccelTime = 0.05f;
     private float xSkidTime = 0.033f;
 
-    private float gravity = 1.0f;
-    private bool isGrounded = false;
-
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
+        collider = GetComponent<BoxCollider2D>();
         inputs = new GameInputs();
     }
 
@@ -173,75 +173,7 @@ public class PlayerMovement : MonoBehaviour
             xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / xDeccelTime);
         }
 
-        yVelocity -= gravity;
-
         displacementVector = new Vector2(xVelocity, yVelocity) * Time.fixedDeltaTime;
-
-        HandleXCollision();
-        HandleYCollision();
-
         rigidBody.MovePosition(rigidBody.position + displacementVector);
-    }
-
-    private void HandleXCollision()
-    {
-        ContactFilter2D filter = new ContactFilter2D();
-        filter.useLayerMask = true;
-        filter.useTriggers = false;
-        filter.layerMask = groundLayer;
-
-        List<RaycastHit2D> hits = new List<RaycastHit2D>();
-        int hitCheck = rigidBody.Cast(new Vector2(Mathf.Sign(displacementVector.x), 0.0f), filter, hits, Mathf.Abs(displacementVector.x));
-
-        if (hitCheck > 0)
-        {
-            float distance = Mathf.Abs(displacementVector.x) + 1.0f;
-
-            for (int i = 0; i < hitCheck; i++)
-            {
-                if (hits[i].distance < distance)
-                {
-                    distance = hits[i].distance;
-                }
-            }
-
-            displacementVector.x = Mathf.Sign(displacementVector.x) * (distance - 0.003f);
-        }
-    }
-
-    private void HandleYCollision()
-    {
-        ContactFilter2D filter = new ContactFilter2D();
-        filter.useLayerMask = true;
-        filter.useTriggers = false;
-        filter.layerMask = groundLayer;
-
-        List<RaycastHit2D> hits = new List<RaycastHit2D>();
-        int hitCheck = rigidBody.Cast(new Vector2(0.0f, Mathf.Sign(displacementVector.y)), filter, hits, Mathf.Abs(displacementVector.y));
-
-        if (hitCheck > 0)
-        {
-            float distance = Mathf.Abs(displacementVector.y) + 1.0f;
-
-            for (int i = 0; i < hitCheck; i++)
-            {
-                if (hits[i].distance < distance)
-                {
-                    distance = hits[i].distance;
-                }
-            }
-
-            if (Mathf.Sign(displacementVector.y) == -1.0f)
-            {
-                isGrounded = true;
-            }
-
-            yVelocity = 0.0f;
-
-            displacementVector.y = Mathf.Sign(displacementVector.y) * (distance - 0.003f);
-        } else
-        {
-            isGrounded = false;
-        }
     }
 }
