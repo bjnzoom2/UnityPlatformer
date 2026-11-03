@@ -129,7 +129,7 @@ public class PlayerMovement : MonoBehaviour
         if (previousGroundCast && !hit && yVelocity <= 0.0f && !coyoteJumpActivated)
         {
             coyoteJumpActivated = true;
-            CoyoteJump();
+            StartCoroutine(CoyoteJump());
         }
 
         previousGroundCast = hit;
