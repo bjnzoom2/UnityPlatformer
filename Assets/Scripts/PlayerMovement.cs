@@ -29,6 +29,9 @@ public class PlayerMovement : MonoBehaviour
 
     private bool jumpBufferActivated = false;
 
+    private bool coyoteJumpActivated = false;
+    private bool previousGroundCast = false;
+
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
@@ -75,12 +78,17 @@ public class PlayerMovement : MonoBehaviour
         if (jumpFlag)
         {
             jumpFlag = false;
-            if (!jumpBufferActivated)
+            if (coyoteJumpActivated)
+            {
+                Jump();
+                coyoteJumpActivated = false;
+            } else if (!jumpBufferActivated)
             {
                 if (isGrounded)
                 {
                     Jump();
-                } else
+                }
+                else
                 {
                     jumpBufferActivated = true;
                     StartCoroutine(JumpBuffer());
@@ -117,6 +125,14 @@ public class PlayerMovement : MonoBehaviour
         {
             isGrounded = false;
         }
+
+        if (previousGroundCast && !hit && yVelocity <= 0.0f && !coyoteJumpActivated)
+        {
+            coyoteJumpActivated = true;
+            CoyoteJump();
+        }
+
+        previousGroundCast = hit;
     }
 
     private void CeilingDetection()
@@ -153,6 +169,20 @@ public class PlayerMovement : MonoBehaviour
         }
 
         jumpBufferActivated = false;
+    }
+
+    private IEnumerator CoyoteJump()
+    {
+        float coyoteJumpTimer = 0.0f;
+        float coyoteJumpDuration = 0.1f;
+
+        while (coyoteJumpTimer < coyoteJumpDuration)
+        {
+            coyoteJumpTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        coyoteJumpActivated = false;
     }
 
     #endregion
