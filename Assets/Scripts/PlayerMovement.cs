@@ -15,8 +15,10 @@ public class PlayerMovement : MonoBehaviour
 
     private float horizontalInput = 0.0f;
     private float targetPlayerSpeed = 8.0f;
+
     private float accelTime = 0.1f;
     private float deccelTime = 0.05f;
+    private float airResistanceValue = 0.5f;
 
     private float gravity = 0.6f;
     private float fallGravity = 0.8f;
@@ -69,10 +71,22 @@ public class PlayerMovement : MonoBehaviour
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
         if (targetXVelocity != 0.0f)
         {
-            xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
+            if (isGrounded)
+            {
+                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
+            } else
+            {
+                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (accelTime / airResistanceValue) * Time.fixedDeltaTime);
+            }
         } else
         {
-            xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
+            if (isGrounded)
+            {
+                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
+            } else
+            {
+                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (deccelTime / airResistanceValue) * Time.fixedDeltaTime);
+            }
         }
 
         if (jumpFlag)
