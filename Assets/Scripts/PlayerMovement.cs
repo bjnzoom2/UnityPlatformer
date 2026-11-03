@@ -27,6 +27,8 @@ public class PlayerMovement : MonoBehaviour
 
     private bool jumpCutOff = false;
 
+    private bool jumpBufferActivated = false;
+
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
@@ -73,9 +75,16 @@ public class PlayerMovement : MonoBehaviour
         if (jumpFlag)
         {
             jumpFlag = false;
-            if (isGrounded)
+            if (!jumpBufferActivated)
             {
-                yVelocity = jumpPower;
+                if (isGrounded)
+                {
+                    Jump();
+                } else
+                {
+                    jumpBufferActivated = true;
+                    StartCoroutine(JumpBuffer());
+                }
             }
         }
 
@@ -92,7 +101,7 @@ public class PlayerMovement : MonoBehaviour
         {
             yVelocity -= gravity;
         }
-
+        
         rigidBody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
 
@@ -100,7 +109,7 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit)
+        if (hit && yVelocity <= 0.0f)
         {
             isGrounded = true;
             yVelocity = 0.0f;
@@ -118,6 +127,32 @@ public class PlayerMovement : MonoBehaviour
         {
             yVelocity = 0.0f;
         }
+    }
+
+    private void Jump()
+    {
+        yVelocity = jumpPower;
+    }
+
+    private IEnumerator JumpBuffer()
+    {
+        float jumpBufferTimer = 0.0f;
+        float jumpBufferDuration = 0.1f;
+
+        while (jumpBufferTimer < jumpBufferDuration)
+        {
+            if (isGrounded)
+            {
+                Jump();
+                jumpBufferActivated = false;
+                yield break;
+            }
+
+            jumpBufferTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        jumpBufferActivated = false;
     }
 
     #endregion
