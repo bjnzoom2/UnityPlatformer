@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
+using Unity.VisualScripting;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -34,6 +35,9 @@ public class PlayerMovement : MonoBehaviour
     private bool coyoteJumpActivated = false;
     private bool previousGroundCast = false;
 
+    private bool isWallSliding = false;
+    private float xFacingDirection = 1.0f;
+
     private void Awake()
     {
         rigidBody = GetComponent<Rigidbody2D>();
@@ -61,6 +65,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         Debug.DrawRay(transform.position, Vector2.down * (castLength + collider.bounds.extents.y), Color.red);
+        Debug.DrawRay(transform.position, new Vector2(xFacingDirection, 0.0f) * (castLength + collider.bounds.extents.y), Color.red);
     }
 
     private void FixedUpdate()
@@ -89,10 +94,15 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
+        WallSlideDetection(out Vector2 normal);
+
         if (jumpFlag)
         {
             jumpFlag = false;
-            if (coyoteJumpActivated)
+            if (isWallSliding)
+            {
+                WallJump(normal);
+            } else if (coyoteJumpActivated)
             {
                 Jump();
                 coyoteJumpActivated = false;
@@ -122,6 +132,11 @@ public class PlayerMovement : MonoBehaviour
         } else
         {
             yVelocity -= gravity;
+        }
+
+        if (isWallSliding)
+        {
+            yVelocity = Mathf.Clamp(yVelocity, -2.0f, 0.0f);
         }
         
         rigidBody.linearVelocity = new Vector2(xVelocity, yVelocity);
@@ -197,6 +212,32 @@ public class PlayerMovement : MonoBehaviour
         }
 
         coyoteJumpActivated = false;
+    }
+
+    private void WallSlideDetection(out Vector2 wallNormal)
+    {
+        if (horizontalInput != 0.0f)
+        {
+            xFacingDirection = horizontalInput;
+        }
+
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, solidsLayer);
+        wallNormal = hit.normal;
+
+        if (hit && yVelocity < 0.0f)
+        {
+            isWallSliding = true;
+        } else
+        {
+            isWallSliding = false;
+        }
+    }
+
+    private void WallJump(Vector2 wallNormal)
+    {
+        xVelocity = wallNormal.x * jumpPower;
+        yVelocity = jumpPower;
+        isWallSliding = false;
     }
 
     #endregion
