@@ -10,16 +10,22 @@ public class PlayerMovement : MonoBehaviour
     private BoxCollider2D collider;
     private GameInputs inputs;
 
-    private float targetPlayerSpeed = 8.0f;
-    private float jumpPower = 16.0f;
     private float xVelocity = 0.0f;
-    private float accelTime = 0.1f;
+    private float yVelocity = 0.0f;
 
-    private float horizontalInput;
-    private bool hasJumped = false;
+    private float horizontalInput = 0.0f;
+    private float targetPlayerSpeed = 8.0f;
+    private float accelTime = 0.1f;
+    private float deccelTime = 0.05f;
+
+    private float gravity = 0.6f;
+    private float fallGravity = 0.8f;
     private bool isGrounded = false;
+    private bool jumpFlag = false;
+    private float jumpPower = 16.0f;
+    private float castLength = 0.003f;
+
     private bool jumpCutOff = false;
-    private bool jumpBufferActivated = false;
 
     private void Awake()
     {
@@ -33,91 +39,86 @@ public class PlayerMovement : MonoBehaviour
         inputs.Enable();
     }
 
-    private void Start()
-    {
-
-    }
-
     private void Update()
     {
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
 
-        float raylength = 0.01f;
-        RaycastHit2D hit = Physics2D.BoxCast(collider.bounds.center, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, raylength + collider.bounds.extents.y, solidsLayer);
-        Debug.DrawRay(collider.bounds.center, Vector2.down * (raylength + collider.bounds.extents.y), Color.red);
-
-        if (hit.collider != null && rigidBody.linearVelocityY <= 0.05f)
+        if (!jumpFlag)
         {
-            isGrounded = true;
-        }
-        else
-        {
-            isGrounded = false;
+            jumpFlag = inputs.Player.Jump.WasPressedThisFrame();
         }
 
-        if (!hasJumped)
+        if (!jumpCutOff && rigidBody.linearVelocityY > 0.0f)
         {
-            hasJumped = inputs.Player.Jump.WasPressedThisFrame();
+            jumpCutOff = inputs.Player.Jump.WasReleasedThisFrame();
         }
 
-        if (!jumpCutOff && !isGrounded)
-        {
-            jumpCutOff = (inputs.Player.Jump.WasReleasedThisFrame() && rigidBody.linearVelocityY > 0.0f);
-        }
+        Debug.DrawRay(transform.position, Vector2.down * (castLength + collider.bounds.extents.y), Color.red);
     }
 
     private void FixedUpdate()
     {
-        xVelocity = rigidBody.linearVelocityX;
-        float targetXVelocity = horizontalInput * targetPlayerSpeed;
-        xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
-        rigidBody.linearVelocityX = xVelocity;
+        GroundDetection();
+        CeilingDetection();
 
-        if (hasJumped)
+        float targetXVelocity = horizontalInput * targetPlayerSpeed;
+        if (targetXVelocity != 0.0f)
         {
-            hasJumped = false;
-            if (isGrounded && !jumpBufferActivated)
+            xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
+        } else
+        {
+            xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
+        }
+
+        if (jumpFlag)
+        {
+            jumpFlag = false;
+            if (isGrounded)
             {
-                Jump();
-            }
-            else if (!jumpBufferActivated)
-            {
-                jumpBufferActivated = true;
-                StartCoroutine(JumpBuffer());
+                yVelocity = jumpPower;
             }
         }
 
         if (jumpCutOff)
         {
-            rigidBody.linearVelocityY *= 0.6f;
             jumpCutOff = false;
+            yVelocity *= 0.6f;
         }
-    }
 
-    private void Jump()
-    {
-        rigidBody.AddForceY(jumpPower, ForceMode2D.Impulse);
-    }
-
-    private IEnumerator JumpBuffer()
-    {
-        float jumpBufferTimer = 0.0f;
-        float jumpBufferDuration = 0.1f;
-
-        while (jumpBufferTimer < jumpBufferDuration)
+        if (yVelocity <= 0.0f)
         {
-            if (isGrounded)
-            {
-                Jump();
-                jumpBufferActivated = false;
-                yield break;
-            }
-
-            jumpBufferTimer += Time.deltaTime;
-            yield return null;
+            yVelocity -= fallGravity;
+        } else
+        {
+            yVelocity -= gravity;
         }
 
-        jumpBufferActivated = false;
+        rigidBody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
+
+    private void GroundDetection()
+    {
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
+
+        if (hit)
+        {
+            isGrounded = true;
+            yVelocity = 0.0f;
+        } else
+        {
+            isGrounded = false;
+        }
+    }
+
+    private void CeilingDetection()
+    {
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.up, castLength + collider.bounds.extents.y, solidsLayer);
+
+        if (hit)
+        {
+            yVelocity = 0.0f;
+        }
+    }
+
     #endregion
 }
