@@ -23,6 +23,8 @@ public class PlayerMovement : MonoBehaviour
 
     private float gravity = 0.6f;
     private float fallGravity = 0.8f;
+    private float apexGravity = 0.4f;
+
     private bool isGrounded = false;
     private bool jumpFlag = false;
     private float jumpPower = 16.0f;
@@ -126,13 +128,7 @@ public class PlayerMovement : MonoBehaviour
             yVelocity *= 0.6f;
         }
 
-        if (yVelocity <= 0.0f)
-        {
-            yVelocity -= fallGravity;
-        } else
-        {
-            yVelocity -= gravity;
-        }
+        HandleGravity();
 
         if (isWallSliding)
         {
@@ -171,6 +167,21 @@ public class PlayerMovement : MonoBehaviour
         if (hit)
         {
             yVelocity = 0.0f;
+        }
+    }
+
+    private void HandleGravity()
+    {
+        if (yVelocity <= 0.15f && yVelocity >= -0.15f)
+        {
+            yVelocity -= apexGravity;
+        } else if (yVelocity < 0.15f)
+        {
+            yVelocity -= fallGravity;
+        }
+        else
+        {
+            yVelocity -= gravity;
         }
     }
 
