@@ -25,7 +25,7 @@ public class PlayerMovement : MonoBehaviour
     private float gravity = 0.6f;
     private float fallGravity = 0.8f;
     private float apexGravity = 0.4f;
-    private float maxFallSpeed = 30.0f;
+    private float maxFallSpeed = 35.0f;
 
     private bool isGrounded = false;
     private bool jumpFlag = false;
@@ -45,6 +45,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 wallSlideNormal = new Vector2();
 
     private bool dashFlag = false;
+    private bool canDash = true;
     private bool dashActivated = false;
     private float dashSpeed = 16.0f;
     private bool dashCooldownActivated = false;
@@ -130,6 +131,11 @@ public class PlayerMovement : MonoBehaviour
 
         WallSlideDetection(out Vector2 _normal);
         wallSlideNormal = _normal;
+        
+        if (isGrounded || isWallSliding)
+        {
+            canDash = true;
+        }
 
         if (jumpFlag)
         {
@@ -288,11 +294,14 @@ public class PlayerMovement : MonoBehaviour
     {
         xVelocity = wallNormal.x * jumpPower;
         yVelocity = jumpPower;
+        xFacingDirection = -xFacingDirection;
         isWallSliding = false;
     }
 
     private IEnumerator Dash()
     {
+        if (!canDash) yield break;
+
         float dashTimer = 0.0f;
         float dashDuration = 0.2f;
         Vector2 dashVector = new Vector2();
@@ -321,6 +330,7 @@ public class PlayerMovement : MonoBehaviour
 
         dashFlag = false;
         dashActivated = false;
+        canDash = false;
         StartCoroutine(DashCooldown());
     }
 
