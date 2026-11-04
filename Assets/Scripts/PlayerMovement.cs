@@ -79,7 +79,7 @@ public class PlayerMovement : MonoBehaviour
             jumpCutOff = inputs.Player.Jump.WasReleasedThisFrame();
         }
 
-        if (!dashFlag && !dashCooldownActivated)
+        if (!dashFlag && !dashActivated && !dashCooldownActivated)
         {
             dashFlag = inputs.Player.Dash.WasPressedThisFrame();
         }
@@ -94,7 +94,7 @@ public class PlayerMovement : MonoBehaviour
         CeilingDetection();
 
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
-        if (!dashFlag)
+        if (!dashFlag && !dashActivated)
         {
             if (targetXVelocity != 0.0f)
             {
@@ -123,8 +123,9 @@ public class PlayerMovement : MonoBehaviour
             {
                 xFacingDirection = horizontalInput;
             }
-        } else if (!dashActivated)
+        } else if (dashFlag && !dashActivated && canDash)
         {
+            dashFlag = false;
             dashActivated = true;
             StartCoroutine(Dash());
         }
@@ -132,12 +133,12 @@ public class PlayerMovement : MonoBehaviour
         WallSlideDetection(out Vector2 _normal);
         wallSlideNormal = _normal;
         
-        if (isGrounded || isWallSliding)
+        if (isGrounded || isWallSliding && !dashCooldownActivated && !dashActivated)
         {
             canDash = true;
         }
 
-        if (jumpFlag)
+        if (jumpFlag && !dashActivated)
         {
             jumpFlag = false;
             if (isWallSliding)
@@ -281,7 +282,7 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, solidsLayer);
         wallNormal = hit.normal;
 
-        if (hit && yVelocity < 0.0f)
+        if (hit && yVelocity < 0.0f && !dashActivated)
         {
             isWallSliding = true;
         } else
@@ -300,7 +301,7 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator Dash()
     {
-        if (!canDash) yield break;
+        canDash = false;
 
         float dashTimer = 0.0f;
         float dashDuration = 0.2f;
@@ -324,13 +325,11 @@ public class PlayerMovement : MonoBehaviour
             xVelocity = dashVector.x;
             yVelocity = dashVector.y;
 
-            dashTimer += Time.deltaTime;
-            yield return null;
+            dashTimer += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
         }
 
-        dashFlag = false;
         dashActivated = false;
-        canDash = false;
         StartCoroutine(DashCooldown());
     }
 
