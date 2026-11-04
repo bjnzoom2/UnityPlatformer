@@ -50,6 +50,10 @@ public class PlayerMovement : MonoBehaviour
     private float dashSpeed = 16.0f;
     private bool dashCooldownActivated = false;
 
+    private bool leftCornerCorrectionHit = false;
+    private bool rightCornerCorrectionHit = false;
+    private float cornerCorrectionRayOffset = 0.7f;
+
     #endregion
 
     private void Awake()
@@ -86,11 +90,14 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.DrawRay(transform.position, Vector2.down * (castLength + collider.bounds.extents.y), Color.red);
         Debug.DrawRay(transform.position, new Vector2(xFacingDirection, 0.0f) * (castLength + collider.bounds.extents.y), Color.red);
+        Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
+        Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
     }
 
     private void FixedUpdate()
     {
         GroundDetection();
+        CornerCorrectionDetection();
         CeilingDetection();
 
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
@@ -211,8 +218,27 @@ public class PlayerMovement : MonoBehaviour
 
         if (hit && !dashActivated)
         {
-            yVelocity = 0.0f;
+            if (leftCornerCorrectionHit || rightCornerCorrectionHit)
+            {
+                yVelocity = 0.0f;
+            } else
+            {
+                float xOffset = 1.0f - cornerCorrectionRayOffset;
+                if (hit.point.x > rigidBody.position.x)
+                {
+                    rigidBody.position -= new Vector2(collider.bounds.extents.x * xOffset, 0.0f);
+                } else
+                {
+                    rigidBody.position += new Vector2(collider.bounds.extents.x * xOffset, 0.0f);
+                }
+            }
         }
+    }
+
+    private void CornerCorrectionDetection()
+    {
+        leftCornerCorrectionHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
+        rightCornerCorrectionHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
     }
 
     private void HandleGravity()
@@ -335,11 +361,11 @@ public class PlayerMovement : MonoBehaviour
                 Vector2 hitNormal = hit.normal;
                 hitNormal = -1.0f * new Vector2(Mathf.Abs(hitNormal.x), Mathf.Abs(hitNormal.y));
 
-                if (hitNormal.x == 0.0f)
+                if (hitNormal.x <= 0.1f && hitNormal.x >= -0.1f)
                 {
                     hitNormal.x = 1.0f;
                 }
-                if (hitNormal.y == 0.0f)
+                if (hitNormal.y <= 0.1f && hitNormal.y >= -0.1f)
                 {
                     hitNormal.y = 1.0f;
                 }
