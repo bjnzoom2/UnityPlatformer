@@ -15,6 +15,7 @@ public class PlayerMovement : MonoBehaviour
     private float yVelocity = 0.0f;
 
     private float horizontalInput = 0.0f;
+    private float verticalInput = 0.0f;
     private float targetPlayerSpeed = 8.0f;
 
     private float accelTime = 0.1f;
@@ -41,10 +42,11 @@ public class PlayerMovement : MonoBehaviour
     private bool isWallSliding = false;
     private float xFacingDirection = 1.0f;
     private float wallSlideSpeed = 3.0f;
+    private Vector2 wallSlideNormal = new Vector2();
 
     private bool dashFlag = false;
     private bool dashActivated = false;
-    private float dashSpeed = 18.0f;
+    private float dashSpeed = 16.0f;
     private bool dashCooldownActivated = false;
 
     #endregion
@@ -64,6 +66,7 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
+        verticalInput = inputs.Player.VeritcalInput.ReadValue<float>();
 
         if (!jumpFlag)
         {
@@ -125,14 +128,15 @@ public class PlayerMovement : MonoBehaviour
             StartCoroutine(Dash());
         }
 
-        WallSlideDetection(out Vector2 normal);
+        WallSlideDetection(out Vector2 _normal);
+        wallSlideNormal = _normal;
 
         if (jumpFlag)
         {
             jumpFlag = false;
             if (isWallSliding)
             {
-                WallJump(normal);
+                WallJump(wallSlideNormal);
             } else if (coyoteJumpActivated)
             {
                 Jump();
@@ -157,7 +161,7 @@ public class PlayerMovement : MonoBehaviour
             yVelocity *= 0.6f;
         }
 
-        if (!dashFlag)
+        if (!dashActivated)
         {
             HandleGravity();
         }
@@ -238,6 +242,13 @@ public class PlayerMovement : MonoBehaviour
                 yield break;
             }
 
+            if (isWallSliding)
+            {
+                WallJump(wallSlideNormal);
+                jumpBufferActivated = false;
+                yield break;
+            }
+
             jumpBufferTimer += Time.deltaTime;
             yield return null;
         }
@@ -283,12 +294,26 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator Dash()
     {
         float dashTimer = 0.0f;
-        float dashDuration = 0.15f;
+        float dashDuration = 0.2f;
+        Vector2 dashVector = new Vector2();
+
+        if (isGrounded)
+        {
+            dashVector = new Vector2(xFacingDirection * dashSpeed, 0.0f);
+        } else
+        {
+            dashVector = new Vector2(horizontalInput, verticalInput);
+            if (horizontalInput == 0.0f && verticalInput == 0.0f)
+            {
+                dashVector.x = xFacingDirection;
+            }
+            dashVector = dashVector.normalized * dashSpeed;
+        }
 
         while (dashTimer < dashDuration)
         {
-            xVelocity = xFacingDirection * dashSpeed;
-            yVelocity = 0.0f;
+            xVelocity = dashVector.x;
+            yVelocity = dashVector.y;
 
             dashTimer += Time.deltaTime;
             yield return null;
