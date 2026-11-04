@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 
 public class PlayerMovement : MonoBehaviour
 {
-    #region Logic
+    #region Variables
     [SerializeField] private LayerMask solidsLayer;
     private Rigidbody2D rigidBody;
     private BoxCollider2D collider;
@@ -39,6 +39,14 @@ public class PlayerMovement : MonoBehaviour
 
     private bool isWallSliding = false;
     private float xFacingDirection = 1.0f;
+    private float wallSlideSpeed = 3.0f;
+
+    private bool dashFlag = false;
+    private bool dashActivated = false;
+    private float dashSpeed = 18.0f;
+    private bool dashCooldownActivated = false;
+
+    #endregion
 
     private void Awake()
     {
@@ -66,6 +74,11 @@ public class PlayerMovement : MonoBehaviour
             jumpCutOff = inputs.Player.Jump.WasReleasedThisFrame();
         }
 
+        if (!dashFlag && !dashCooldownActivated)
+        {
+            dashFlag = inputs.Player.Dash.WasPressedThisFrame();
+        }
+
         Debug.DrawRay(transform.position, Vector2.down * (castLength + collider.bounds.extents.y), Color.red);
         Debug.DrawRay(transform.position, new Vector2(xFacingDirection, 0.0f) * (castLength + collider.bounds.extents.y), Color.red);
     }
@@ -76,24 +89,39 @@ public class PlayerMovement : MonoBehaviour
         CeilingDetection();
 
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
-        if (targetXVelocity != 0.0f)
+        if (!dashFlag)
         {
-            if (isGrounded)
+            if (targetXVelocity != 0.0f)
             {
-                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
-            } else
-            {
-                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (accelTime / airResistanceValue) * Time.fixedDeltaTime);
+                if (isGrounded)
+                {
+                    xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
+                }
+                else
+                {
+                    xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (accelTime / airResistanceValue) * Time.fixedDeltaTime);
+                }
             }
-        } else
+            else
+            {
+                if (isGrounded)
+                {
+                    xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
+                }
+                else
+                {
+                    xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (deccelTime / airResistanceValue) * Time.fixedDeltaTime);
+                }
+            }
+
+            if (horizontalInput != 0.0f)
+            {
+                xFacingDirection = horizontalInput;
+            }
+        } else if (!dashActivated)
         {
-            if (isGrounded)
-            {
-                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
-            } else
-            {
-                xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / (deccelTime / airResistanceValue) * Time.fixedDeltaTime);
-            }
+            dashActivated = true;
+            StartCoroutine(Dash());
         }
 
         WallSlideDetection(out Vector2 normal);
@@ -128,11 +156,14 @@ public class PlayerMovement : MonoBehaviour
             yVelocity *= 0.6f;
         }
 
-        HandleGravity();
+        if (!dashFlag)
+        {
+            HandleGravity();
+        }
 
         if (isWallSliding)
         {
-            yVelocity = Mathf.Clamp(yVelocity, -2.0f, 0.0f);
+            yVelocity = Mathf.Clamp(yVelocity, -wallSlideSpeed, 0.0f);
         }
         
         rigidBody.linearVelocity = new Vector2(xVelocity, yVelocity);
@@ -227,11 +258,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallSlideDetection(out Vector2 wallNormal)
     {
-        if (horizontalInput != 0.0f)
-        {
-            xFacingDirection = horizontalInput;
-        }
-
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, solidsLayer);
         wallNormal = hit.normal;
 
@@ -251,5 +277,37 @@ public class PlayerMovement : MonoBehaviour
         isWallSliding = false;
     }
 
-    #endregion
+    private IEnumerator Dash()
+    {
+        float dashTimer = 0.0f;
+        float dashDuration = 0.15f;
+
+        while (dashTimer < dashDuration)
+        {
+            xVelocity = xFacingDirection * dashSpeed;
+            yVelocity = 0.0f;
+
+            dashTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        dashFlag = false;
+        dashActivated = false;
+        StartCoroutine(DashCooldown());
+    }
+
+    private IEnumerator DashCooldown()
+    {
+        dashCooldownActivated = true;
+        float timer = 0.0f;
+        float cooldown = 0.5f;
+
+        while (timer < cooldown)
+        {
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        dashCooldownActivated = false;
+    }
 }
