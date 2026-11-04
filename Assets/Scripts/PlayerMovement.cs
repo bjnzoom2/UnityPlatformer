@@ -24,6 +24,7 @@ public class PlayerMovement : MonoBehaviour
     private float gravity = 0.6f;
     private float fallGravity = 0.8f;
     private float apexGravity = 0.4f;
+    private float maxFallSpeed = 30.0f;
 
     private bool isGrounded = false;
     private bool jumpFlag = false;
@@ -165,7 +166,9 @@ public class PlayerMovement : MonoBehaviour
         {
             yVelocity = Mathf.Clamp(yVelocity, -wallSlideSpeed, 0.0f);
         }
-        
+
+        yVelocity = Mathf.Clamp(yVelocity, -maxFallSpeed, Mathf.Infinity);
+
         rigidBody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
 
