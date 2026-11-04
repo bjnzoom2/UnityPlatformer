@@ -79,7 +79,7 @@ public class PlayerMovement : MonoBehaviour
             jumpCutOff = inputs.Player.Jump.WasReleasedThisFrame();
         }
 
-        if (!dashFlag && !dashActivated && !dashCooldownActivated)
+        if (!dashFlag && canDash)
         {
             dashFlag = inputs.Player.Dash.WasPressedThisFrame();
         }
@@ -187,7 +187,7 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit && yVelocity <= 0.0f)
+        if (hit && yVelocity <= 0.0f && !dashActivated)
         {
             isGrounded = true;
             yVelocity = 0.0f;
@@ -209,7 +209,7 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.up, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit)
+        if (hit && !dashActivated)
         {
             yVelocity = 0.0f;
         }
@@ -304,7 +304,7 @@ public class PlayerMovement : MonoBehaviour
         canDash = false;
 
         float dashTimer = 0.0f;
-        float dashDuration = 0.2f;
+        float dashDuration = 0.25f;
         Vector2 dashVector = new Vector2();
 
         if (isGrounded)
@@ -322,13 +322,36 @@ public class PlayerMovement : MonoBehaviour
 
         while (dashTimer < dashDuration)
         {
+            RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, collider.bounds.size, 0.0f, dashVector.normalized, dashVector.magnitude * Time.fixedDeltaTime + castLength, solidsLayer);
+
+            float dashSlowDown = Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer);
+            dashVector *= 1.0f - dashSlowDown;
+
             xVelocity = dashVector.x;
             yVelocity = dashVector.y;
+
+            if (hit)
+            {
+                Vector2 hitNormal = hit.normal;
+                hitNormal = -1.0f * new Vector2(Mathf.Abs(hitNormal.x), Mathf.Abs(hitNormal.y));
+
+                if (hitNormal.x == 0.0f)
+                {
+                    hitNormal.x = 1.0f;
+                }
+                if (hitNormal.y == 0.0f)
+                {
+                    hitNormal.y = 1.0f;
+                }
+
+                dashVector *= hitNormal;
+            }
 
             dashTimer += Time.fixedDeltaTime;
             yield return new WaitForFixedUpdate();
         }
 
+        yVelocity *= 0.7f;
         dashActivated = false;
         StartCoroutine(DashCooldown());
     }
