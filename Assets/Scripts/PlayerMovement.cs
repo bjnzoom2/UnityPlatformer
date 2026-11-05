@@ -5,7 +5,18 @@ using Unity.VisualScripting;
 
 public class PlayerMovement : MonoBehaviour
 {
+    private enum States
+    {
+        Grounded = 0,
+        Airborne = 1,
+        WallSliding = 2,
+        Dashing = 3
+    }
+
     #region Variables
+
+    States playerState = new();
+
     [SerializeField] private LayerMask solidsLayer;
     private Rigidbody2D rigidBody;
     private BoxCollider2D collider;
@@ -27,7 +38,6 @@ public class PlayerMovement : MonoBehaviour
     private float apexGravity = 0.4f;
     private float maxFallSpeed = 35.0f;
 
-    private bool isGrounded = false;
     private bool jumpFlag = false;
     private float jumpPower = 16.0f;
     private float castLength = 0.003f;
@@ -39,14 +49,12 @@ public class PlayerMovement : MonoBehaviour
     private bool coyoteJumpActivated = false;
     private bool previousGroundCast = false;
 
-    private bool isWallSliding = false;
     private float xFacingDirection = 1.0f;
     private float wallSlideSpeed = 3.0f;
     private Vector2 wallSlideNormal = new Vector2();
 
     private bool dashFlag = false;
     private bool canDash = true;
-    private bool dashActivated = false;
     private float dashSpeed = 16.0f;
     private bool dashCooldownActivated = false;
 
@@ -110,11 +118,11 @@ public class PlayerMovement : MonoBehaviour
         CeilingDetection();
 
         float targetXVelocity = horizontalInput * targetPlayerSpeed;
-        if (!dashFlag && !dashActivated)
+        if (!dashFlag && playerState != States.Dashing)
         {
             if (targetXVelocity != 0.0f)
             {
-                if (isGrounded)
+                if (playerState == States.Grounded)
                 {
                     xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / accelTime * Time.fixedDeltaTime);
                 }
@@ -125,7 +133,7 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
-                if (isGrounded)
+                if (playerState == States.Grounded)
                 {
                     xVelocity = Mathf.MoveTowards(xVelocity, targetXVelocity, targetPlayerSpeed / deccelTime * Time.fixedDeltaTime);
                 }
@@ -139,25 +147,24 @@ public class PlayerMovement : MonoBehaviour
             {
                 xFacingDirection = horizontalInput;
             }
-        } else if (dashFlag && !dashActivated && canDash)
+        } else if (dashFlag && playerState != States.Dashing && canDash)
         {
             dashFlag = false;
-            dashActivated = true;
             StartCoroutine(Dash());
         }
 
         WallSlideDetection(out Vector2 _normal);
         wallSlideNormal = _normal;
         
-        if (isGrounded || isWallSliding && !dashCooldownActivated && !dashActivated)
+        if ((playerState == States.Grounded || playerState == States.WallSliding) && !dashCooldownActivated)
         {
             canDash = true;
         }
 
-        if (jumpFlag && !dashActivated)
+        if (jumpFlag && playerState != States.Dashing)
         {
             jumpFlag = false;
-            if (isWallSliding)
+            if (playerState == States.WallSliding)
             {
                 WallJump(wallSlideNormal);
             } else if (coyoteJumpActivated)
@@ -166,7 +173,7 @@ public class PlayerMovement : MonoBehaviour
                 coyoteJumpActivated = false;
             } else if (!jumpBufferActivated)
             {
-                if (isGrounded)
+                if (playerState == States.Grounded)
                 {
                     Jump();
                 }
@@ -184,12 +191,12 @@ public class PlayerMovement : MonoBehaviour
             yVelocity *= 0.6f;
         }
 
-        if (!dashActivated)
+        if (playerState != States.Dashing)
         {
             HandleGravity();
         }
 
-        if (isWallSliding)
+        if (playerState == States.WallSliding)
         {
             yVelocity = Mathf.Clamp(yVelocity, -wallSlideSpeed, 0.0f);
         }
@@ -203,18 +210,18 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit && yVelocity <= 0.0f && !dashActivated)
+        if (hit && yVelocity <= 0.0f && playerState != States.Dashing)
         {
-            isGrounded = true;
+            playerState = States.Grounded;
             yVelocity = 0.0f;
         } else
         {
-            if (leftLedgeHopHit || rightLedgeHopHit && !hit)
+            if ((leftLedgeHopHit || rightLedgeHopHit) && !hit && playerState != States.Dashing)
             {
-                isGrounded = true;
+                playerState = States.Grounded;
             } else
             {
-                isGrounded = false;
+                playerState = States.Airborne;
             }
         }
 
@@ -231,7 +238,7 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.up, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit && !dashActivated)
+        if (hit && playerState != States.Dashing)
         {
             if (leftCornerCorrectionHit || rightCornerCorrectionHit)
             {
@@ -288,14 +295,14 @@ public class PlayerMovement : MonoBehaviour
 
         while (jumpBufferTimer < jumpBufferDuration)
         {
-            if (isGrounded)
+            if (playerState == States.Grounded)
             {
                 Jump();
                 jumpBufferActivated = false;
                 yield break;
             }
 
-            if (isWallSliding)
+            if (playerState == States.WallSliding)
             {
                 WallJump(wallSlideNormal);
                 jumpBufferActivated = false;
@@ -328,12 +335,9 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, solidsLayer);
         wallNormal = hit.normal;
 
-        if (hit && yVelocity < 0.0f && !dashActivated)
+        if (hit && yVelocity < 0.0f && playerState != States.Dashing)
         {
-            isWallSliding = true;
-        } else
-        {
-            isWallSliding = false;
+            playerState = States.WallSliding;
         }
     }
 
@@ -342,7 +346,7 @@ public class PlayerMovement : MonoBehaviour
         xVelocity = wallNormal.x * jumpPower;
         yVelocity = jumpPower;
         xFacingDirection = -xFacingDirection;
-        isWallSliding = false;
+        playerState = States.Airborne;
     }
 
     private IEnumerator Dash()
@@ -353,7 +357,7 @@ public class PlayerMovement : MonoBehaviour
         float dashDuration = 0.25f;
         Vector2 dashVector = new Vector2();
 
-        if (isGrounded)
+        if (playerState == States.Grounded)
         {
             dashVector = new Vector2(xFacingDirection * dashSpeed, 0.0f);
         } else
@@ -365,6 +369,8 @@ public class PlayerMovement : MonoBehaviour
             }
             dashVector = dashVector.normalized * dashSpeed;
         }
+
+        playerState = States.Dashing;
 
         while (dashTimer < dashDuration)
         {
@@ -398,7 +404,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         yVelocity *= 0.7f;
-        dashActivated = false;
+        playerState = States.Airborne;
         StartCoroutine(DashCooldown());
     }
 
