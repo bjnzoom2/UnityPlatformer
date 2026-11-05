@@ -4,7 +4,7 @@ using System;
 
 public class PlayerMovement : MonoBehaviour
 {
-    private enum States
+    public enum States
     {
         Grounded = 0,
         Airborne = 1,
@@ -14,9 +14,10 @@ public class PlayerMovement : MonoBehaviour
 
     #region Variables
 
-    States playerState = new();
+    public States playerState = new();
 
     [SerializeField] private LayerMask solidsLayer;
+    [SerializeField] private LayerMask hazardsLayer;
     private Rigidbody2D rigidBody;
     private BoxCollider2D collider;
     private GameInputs inputs;
@@ -434,5 +435,14 @@ public class PlayerMovement : MonoBehaviour
         }
 
         dashCooldownActivated = false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()))
+        {
+            Debug.Log("Death");
+            Destroy(gameObject);
+        }
     }
 }
