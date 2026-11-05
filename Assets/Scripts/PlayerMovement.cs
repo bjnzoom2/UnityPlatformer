@@ -223,13 +223,12 @@ public class PlayerMovement : MonoBehaviour
                 yVelocity = 0.0f;
             } else
             {
-                float xOffset = 1.0f - cornerCorrectionRayOffset;
                 if (hit.point.x > rigidBody.position.x)
                 {
-                    rigidBody.position -= new Vector2(collider.bounds.extents.x * xOffset, 0.0f);
+                    rigidBody.position -= new Vector2(collider.bounds.extents.x - (hit.point.x - rigidBody.position.x) + 0.01f, 0.0f);
                 } else
                 {
-                    rigidBody.position += new Vector2(collider.bounds.extents.x * xOffset, 0.0f);
+                    rigidBody.position += new Vector2(collider.bounds.extents.x - (rigidBody.position.x - hit.point.x) + 0.01f, 0.0f);
                 }
             }
         }
