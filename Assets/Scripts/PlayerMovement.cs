@@ -54,6 +54,10 @@ public class PlayerMovement : MonoBehaviour
     private bool rightCornerCorrectionHit = false;
     private float cornerCorrectionRayOffset = 0.7f;
 
+    private bool leftLedgeHopHit = false;
+    private bool rightLedgeHopHit = false;
+    private float ledgeHopRayOffset = 1.15f;
+
     #endregion
 
     private void Awake()
@@ -90,12 +94,17 @@ public class PlayerMovement : MonoBehaviour
 
         Debug.DrawRay(transform.position, Vector2.down * (castLength + collider.bounds.extents.y), Color.red);
         Debug.DrawRay(transform.position, new Vector2(xFacingDirection, 0.0f) * (castLength + collider.bounds.extents.y), Color.red);
+
         Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
         Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
+
+        Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f, 0.0f), Vector2.down * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
+        Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f, 0.0f), Vector2.down * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
     }
 
     private void FixedUpdate()
     {
+        LedgeHopDetection();
         GroundDetection();
         CornerCorrectionDetection();
         CeilingDetection();
@@ -200,7 +209,13 @@ public class PlayerMovement : MonoBehaviour
             yVelocity = 0.0f;
         } else
         {
-            isGrounded = false;
+            if (leftLedgeHopHit || rightLedgeHopHit && !hit)
+            {
+                isGrounded = true;
+            } else
+            {
+                isGrounded = false;
+            }
         }
 
         if (previousGroundCast && !hit && yVelocity <= 0.0f && !coyoteJumpActivated)
@@ -238,6 +253,12 @@ public class PlayerMovement : MonoBehaviour
     {
         leftCornerCorrectionHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
         rightCornerCorrectionHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
+    }
+
+    private void LedgeHopDetection()
+    {
+        leftLedgeHopHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f), Vector2.down, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
+        rightLedgeHopHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f), Vector2.down, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
     }
 
     private void HandleGravity()
