@@ -70,6 +70,7 @@ public class PlayerMovement : MonoBehaviour
     #region Events
 
     public event Action OnJumpVisual;
+    public event Action OnLandVisual;
 
     #endregion
 
@@ -230,10 +231,16 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (previousGroundCast && !hit && yVelocity <= 0.0f && !coyoteJumpActivated)
+        if (previousGroundCast && !hit)
         {
-            coyoteJumpActivated = true;
-            StartCoroutine(CoyoteJump());
+            if (yVelocity <= 0.0f && !coyoteJumpActivated)
+            {
+                coyoteJumpActivated = true;
+                StartCoroutine(CoyoteJump());
+            }
+        } else if (!previousGroundCast && hit)
+        {
+            OnLandVisual?.Invoke();
         }
 
         previousGroundCast = hit;
