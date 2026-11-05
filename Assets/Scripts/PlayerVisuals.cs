@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerVisuals : MonoBehaviour
 {
     private Transform pivotTransform;
+    [SerializeField] private ParticleSystem deathParticlePrefab;
     private PlayerMovement movement;
 
     private float changeTime = 1.5f;
@@ -11,19 +12,21 @@ public class PlayerVisuals : MonoBehaviour
     private void Awake()
     {
         movement = GetComponent<PlayerMovement>();
-        pivotTransform = transform.GetChild(0);
+        pivotTransform = transform.Find("Pivot");
     }
 
     private void OnEnable()
     {
         movement.OnJumpVisual += JumpStretch;
         movement.OnLandVisual += LandSquash;
+        movement.OnDeathVisual += DeathParticles;
     }
 
     private void OnDisable()
     {
         movement.OnJumpVisual -= JumpStretch;
         movement.OnLandVisual -= LandSquash;
+        movement.OnDeathVisual -= DeathParticles;
     }
 
     private void Update()
@@ -39,5 +42,10 @@ public class PlayerVisuals : MonoBehaviour
     private void LandSquash()
     {
         pivotTransform.localScale = new Vector3(1.2f, 0.8f, 0.0f);
+    }
+
+    private void DeathParticles()
+    {
+        Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
     }
 }

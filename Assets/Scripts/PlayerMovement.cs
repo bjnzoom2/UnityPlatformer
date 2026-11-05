@@ -72,6 +72,7 @@ public class PlayerMovement : MonoBehaviour
 
     public event Action OnJumpVisual;
     public event Action OnLandVisual;
+    public event Action OnDeathVisual;
 
     #endregion
 
@@ -442,6 +443,7 @@ public class PlayerMovement : MonoBehaviour
         if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()))
         {
             Debug.Log("Death");
+            OnDeathVisual?.Invoke();
             Destroy(gameObject);
         }
     }
