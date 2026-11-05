@@ -1,7 +1,6 @@
 using UnityEngine;
-using System.Collections.Generic;
 using System.Collections;
-using Unity.VisualScripting;
+using System;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -65,6 +64,12 @@ public class PlayerMovement : MonoBehaviour
     private bool leftLedgeHopHit = false;
     private bool rightLedgeHopHit = false;
     private float ledgeHopRayOffset = 1.15f;
+
+    #endregion
+
+    #region Events
+
+    public event Action OnJumpVisual;
 
     #endregion
 
@@ -286,6 +291,7 @@ public class PlayerMovement : MonoBehaviour
     private void Jump()
     {
         yVelocity = jumpPower;
+        OnJumpVisual?.Invoke();
     }
 
     private IEnumerator JumpBuffer()
