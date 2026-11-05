@@ -218,29 +218,35 @@ public class PlayerMovement : MonoBehaviour
     {
         RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
 
-        if (hit && yVelocity <= 0.0f && playerState != States.Dashing)
+        if (playerState != States.Dashing)
         {
-            playerState = States.Grounded;
-            yVelocity = 0.0f;
-        } else
-        {
-            if ((leftLedgeHopHit || rightLedgeHopHit) && !hit && playerState != States.Dashing)
+            if (hit && yVelocity <= 0.0f)
             {
                 playerState = States.Grounded;
-            } else
+                yVelocity = 0.0f;
+            }
+            else
             {
-                playerState = States.Airborne;
+                if ((leftLedgeHopHit || rightLedgeHopHit) && !hit)
+                {
+                    playerState = States.Grounded;
+                }
+                else
+                {
+                    playerState = States.Airborne;
+                }
             }
         }
 
         if (previousGroundCast && !hit)
         {
-            if (yVelocity <= 0.0f && !coyoteJumpActivated)
+            if (yVelocity <= 0.0f && !coyoteJumpActivated && playerState != States.Dashing)
             {
                 coyoteJumpActivated = true;
                 StartCoroutine(CoyoteJump());
             }
-        } else if (!previousGroundCast && hit)
+        }
+        else if (!previousGroundCast && hit && playerState != States.Dashing)
         {
             OnLandVisual?.Invoke();
         }
