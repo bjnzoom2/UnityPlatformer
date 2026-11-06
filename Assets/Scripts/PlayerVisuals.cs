@@ -26,14 +26,16 @@ public class PlayerVisuals : MonoBehaviour
     private void OnEnable()
     {
         movement.OnJumpVisual += JumpStretch;
-        movement.OnLandVisual += LandSquash;
+        movement.OnLandVisual += LandStretch;
+        movement.OnDashVisual += DashStretch;
         movement.OnDeathVisual += Death;
     }
 
     private void OnDisable()
     {
         movement.OnJumpVisual -= JumpStretch;
-        movement.OnLandVisual -= LandSquash;
+        movement.OnLandVisual -= LandStretch;
+        movement.OnDashVisual -= DashStretch;
         movement.OnDeathVisual -= Death;
     }
 
@@ -48,7 +50,7 @@ public class PlayerVisuals : MonoBehaviour
             targetDeform = 0.0f;
         }
 
-        deformValue = Mathf.SmoothDamp(deformValue, targetDeform, ref deformVelo, 0.1f);
+        deformValue = Mathf.SmoothDamp(deformValue, targetDeform, ref deformVelo, 0.08f);
 
         pivotTransform.localScale = new Vector3(1.0f - deformValue, 1.0f + deformValue, 0.0f);
     }
@@ -59,10 +61,26 @@ public class PlayerVisuals : MonoBehaviour
         holdTimer = 0.08f;
     }
 
-    private void LandSquash()
+    private void LandStretch()
     {
         targetDeform = -0.2f;
         holdTimer = 0.08f;
+    }
+
+    private void DashStretch(Vector2 dashVector)
+    {
+        if (dashVector.y == 0.0f)
+        {
+            targetDeform = -0.3f;
+        }
+        else if (dashVector.x == 0.0f)
+        {
+            targetDeform = 0.3f;
+        } else
+        {
+            targetDeform = 0.0f;
+        }
+        holdTimer = 0.15f;
     }
 
     private void Death()

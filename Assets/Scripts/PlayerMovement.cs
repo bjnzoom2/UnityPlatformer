@@ -57,7 +57,7 @@ public class PlayerMovement : MonoBehaviour
 
     private bool dashFlag = false;
     private bool canDash = true;
-    private float dashSpeed = 17.0f;
+    private float dashSpeed = 20.0f;
     private bool dashCooldownActivated = false;
 
     private bool leftCornerCorrectionHit = false;
@@ -74,6 +74,7 @@ public class PlayerMovement : MonoBehaviour
 
     public event Action OnJumpVisual;
     public event Action OnLandVisual;
+    public event Action<Vector2> OnDashVisual;
     public event Action OnDeathVisual;
 
     #endregion
@@ -381,7 +382,7 @@ public class PlayerMovement : MonoBehaviour
         canDash = false;
 
         float dashTimer = 0.0f;
-        float dashDuration = 0.25f;
+        float dashDuration = 0.15f;
         Vector2 dashVector = new Vector2();
 
         if (playerState == States.Grounded)
@@ -398,6 +399,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         playerState = States.Dashing;
+        OnDashVisual?.Invoke(dashVector);
 
         while (dashTimer < dashDuration)
         {
@@ -430,7 +432,7 @@ public class PlayerMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
 
-        yVelocity *= 0.65f;
+        yVelocity *= 0.55f;
         playerState = States.Airborne;
         StartCoroutine(DashCooldown());
     }
