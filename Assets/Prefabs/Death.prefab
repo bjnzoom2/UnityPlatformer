@@ -48,7 +48,7 @@ ParticleSystem:
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 1
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -80,8 +80,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 3
       minMaxState: 3
-      scalar: 3
-      minScalar: 2
+      scalar: 5
+      minScalar: 3
       maxCurve:
         serializedVersion: 2
         m_Curve: []
@@ -97,8 +97,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 3
       minMaxState: 3
-      scalar: 22
-      minScalar: 12
+      scalar: 24
+      minScalar: 16
       maxCurve:
         serializedVersion: 2
         m_Curve: []
@@ -179,7 +179,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 3
       minMaxState: 3
-      scalar: 0.2
+      scalar: 0.25
       minScalar: 0.1
       maxCurve:
         serializedVersion: 2
@@ -308,7 +308,7 @@ ParticleSystem:
     angle: 25
     length: 5
     boxThickness: {x: 0, y: 0, z: 0}
-    radiusThickness: 1
+    radiusThickness: 0
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 0}
     m_Rotation: {x: 0, y: 0, z: 0}
@@ -355,7 +355,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 1
+      value: 0.0001
       mode: 0
       spread: 0
       speed:

@@ -9,7 +9,8 @@ public class PlayerMovement : MonoBehaviour
         Grounded = 0,
         Airborne = 1,
         WallSliding = 2,
-        Dashing = 3
+        Dashing = 3,
+        Dead = -1
     }
 
     #region Variables
@@ -27,7 +28,7 @@ public class PlayerMovement : MonoBehaviour
 
     private float horizontalInput = 0.0f;
     private float verticalInput = 0.0f;
-    private float targetPlayerSpeed = 8.0f;
+    private float targetPlayerSpeed = 9.0f;
 
     private float accelTime = 0.1f;
     private float deccelTime = 0.05f;
@@ -55,7 +56,7 @@ public class PlayerMovement : MonoBehaviour
 
     private bool dashFlag = false;
     private bool canDash = true;
-    private float dashSpeed = 16.0f;
+    private float dashSpeed = 17.0f;
     private bool dashCooldownActivated = false;
 
     private bool leftCornerCorrectionHit = false;
@@ -90,6 +91,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        if (playerState == States.Dead) return;
+
         horizontalInput = inputs.Player.HorizontalMovement.ReadValue<float>();
         verticalInput = inputs.Player.VeritcalInput.ReadValue<float>();
 
@@ -114,12 +117,14 @@ public class PlayerMovement : MonoBehaviour
         Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
         Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f, 0.0f), Vector2.up * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
 
-        Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f, 0.0f), Vector2.down * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
-        Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f, 0.0f), Vector2.down * (castLength + collider.bounds.extents.y + 0.1f), Color.red);
+        Debug.DrawRay(transform.position - new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, collider.bounds.extents.y, 0.0f), Vector2.down * (castLength + 0.1f), Color.red);
+        Debug.DrawRay(transform.position + new Vector3(collider.bounds.extents.x * ledgeHopRayOffset, -collider.bounds.extents.y, 0.0f), Vector2.down * (castLength + 0.1f), Color.red);
     }
 
     private void FixedUpdate()
     {
+        if (playerState == States.Dead) return;
+
         LedgeHopDetection();
         GroundDetection();
         CornerCorrectionDetection();
@@ -284,8 +289,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void LedgeHopDetection()
     {
-        leftLedgeHopHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f), Vector2.down, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
-        rightLedgeHopHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, 0.0f), Vector2.down, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
+        leftLedgeHopHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, collider.bounds.extents.y), Vector2.down, castLength + 0.1f, solidsLayer);
+        rightLedgeHopHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, -collider.bounds.extents.y), Vector2.down, castLength + 0.1f, solidsLayer);
     }
 
     private void HandleGravity()
@@ -408,11 +413,11 @@ public class PlayerMovement : MonoBehaviour
                 Vector2 hitNormal = hit.normal;
                 hitNormal = -1.0f * new Vector2(Mathf.Abs(hitNormal.x), Mathf.Abs(hitNormal.y));
 
-                if (hitNormal.x <= 0.1f && hitNormal.x >= -0.1f)
+                if (hitNormal.x <= 0.2f && hitNormal.x >= -0.2f)
                 {
                     hitNormal.x = 1.0f;
                 }
-                if (hitNormal.y <= 0.1f && hitNormal.y >= -0.1f)
+                if (hitNormal.y <= 0.2f && hitNormal.y >= -0.2f)
                 {
                     hitNormal.y = 1.0f;
                 }
@@ -424,7 +429,7 @@ public class PlayerMovement : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
 
-        yVelocity *= 0.7f;
+        yVelocity *= 0.65f;
         playerState = States.Airborne;
         StartCoroutine(DashCooldown());
     }
@@ -446,11 +451,15 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()))
+        if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()) && playerState != States.Dead)
         {
-            Debug.Log("Death");
+            playerState = States.Dead;
+
+            rigidBody.linearVelocity = Vector2.zero;
+            xVelocity = 0.0f;
+            yVelocity = 0.0f;
+
             OnDeathVisual?.Invoke();
-            Destroy(gameObject);
         }
     }
 }
