@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using static UnityEngine.Rendering.DebugUI;
 
 public class PlayerVisuals : MonoBehaviour
 {
@@ -12,7 +11,10 @@ public class PlayerVisuals : MonoBehaviour
     [SerializeField] private Volume postProcessing;
     private PlayerMovement movement;
 
-    private float changeTime = 1.5f;
+    private float deformVelo = 0.0f;
+    private float deformValue = 0.0f;
+    private float targetDeform = 0.0f;
+    private float holdTimer = 0.0f;
 
     private void Awake()
     {
@@ -37,17 +39,30 @@ public class PlayerVisuals : MonoBehaviour
 
     private void Update()
     {
-        pivotTransform.localScale = Vector3.MoveTowards(pivotTransform.localScale, new Vector3(1.0f, 1.0f, 0.0f), 1.0f / changeTime * Time.deltaTime);
+        if (holdTimer > 0.0f)
+        {
+            holdTimer -= Time.deltaTime;
+        } else
+        {
+            holdTimer = 0.0f;
+            targetDeform = 0.0f;
+        }
+
+        deformValue = Mathf.SmoothDamp(deformValue, targetDeform, ref deformVelo, 0.1f);
+
+        pivotTransform.localScale = new Vector3(1.0f - deformValue, 1.0f + deformValue, 0.0f);
     }
 
     private void JumpStretch()
     {
-        pivotTransform.localScale = new Vector3(0.8f, 1.2f, 0.0f);
+        targetDeform = 0.2f;
+        holdTimer = 0.08f;
     }
 
     private void LandSquash()
     {
-        pivotTransform.localScale = new Vector3(1.2f, 0.8f, 0.0f);
+        targetDeform = -0.2f;
+        holdTimer = 0.08f;
     }
 
     private void Death()
