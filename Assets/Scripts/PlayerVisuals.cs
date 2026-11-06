@@ -28,6 +28,9 @@ public class PlayerVisuals : MonoBehaviour
         movement.OnJumpVisual += JumpStretch;
         movement.OnLandVisual += LandStretch;
         movement.OnDashVisual += DashStretch;
+        movement.OnDashHitVisual += () => {
+            StartCoroutine(DashHit());
+        };
         movement.OnDeathVisual += Death;
     }
 
@@ -36,6 +39,9 @@ public class PlayerVisuals : MonoBehaviour
         movement.OnJumpVisual -= JumpStretch;
         movement.OnLandVisual -= LandStretch;
         movement.OnDashVisual -= DashStretch;
+        movement.OnDashHitVisual -= () => {
+            StartCoroutine(DashHit());
+        };
         movement.OnDeathVisual -= Death;
     }
 
@@ -81,6 +87,14 @@ public class PlayerVisuals : MonoBehaviour
             targetDeform = 0.0f;
         }
         holdTimer = 0.15f;
+    }
+
+    private IEnumerator DashHit()
+    {
+        yield return null;
+        Time.timeScale = 0.0f;
+        yield return new WaitForSecondsRealtime(0.04f);
+        Time.timeScale = 1.0f;
     }
 
     private void Death()

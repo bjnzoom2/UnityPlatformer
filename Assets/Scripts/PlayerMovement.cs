@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System;
+using UnityEngine.Tilemaps;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -19,6 +20,10 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private LayerMask solidsLayer;
     [SerializeField] private LayerMask hazardsLayer;
+    [SerializeField] private LayerMask breakableLayer;
+
+    private LayerMask detectionMask = new();
+
     private Rigidbody2D rigidBody;
     private BoxCollider2D collider;
     private GameInputs inputs;
@@ -75,6 +80,7 @@ public class PlayerMovement : MonoBehaviour
     public event Action OnJumpVisual;
     public event Action OnLandVisual;
     public event Action<Vector2> OnDashVisual;
+    public event Action OnDashHitVisual;
     public event Action OnDeathVisual;
 
     #endregion
@@ -84,6 +90,7 @@ public class PlayerMovement : MonoBehaviour
         rigidBody = GetComponent<Rigidbody2D>();
         collider = GetComponent<BoxCollider2D>();
         inputs = new GameInputs();
+        detectionMask = solidsLayer | breakableLayer;
     }
 
     private void OnEnable()
@@ -223,7 +230,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void GroundDetection()
     {
-        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, solidsLayer);
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.down, castLength + collider.bounds.extents.y, detectionMask);
 
         if (playerState != States.Dashing)
         {
@@ -263,7 +270,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void CeilingDetection()
     {
-        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.up, castLength + collider.bounds.extents.y, solidsLayer);
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(2.0f * collider.bounds.extents.x, 0.1f), 0.0f, Vector2.up, castLength + collider.bounds.extents.y, detectionMask);
 
         if (hit && playerState != States.Dashing)
         {
@@ -285,14 +292,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void CornerCorrectionDetection()
     {
-        leftCornerCorrectionHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
-        rightCornerCorrectionHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, solidsLayer);
+        leftCornerCorrectionHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, detectionMask);
+        rightCornerCorrectionHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * cornerCorrectionRayOffset, 0.0f), Vector2.up, castLength + collider.bounds.extents.y + 0.1f, detectionMask);
     }
 
     private void LedgeHopDetection()
     {
-        leftLedgeHopHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, collider.bounds.extents.y), Vector2.down, castLength + 0.1f, solidsLayer);
-        rightLedgeHopHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, -collider.bounds.extents.y), Vector2.down, castLength + 0.1f, solidsLayer);
+        leftLedgeHopHit = Physics2D.Raycast(rigidBody.position - new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, collider.bounds.extents.y), Vector2.down, castLength + 0.1f, detectionMask);
+        rightLedgeHopHit = Physics2D.Raycast(rigidBody.position + new Vector2(collider.bounds.extents.x * ledgeHopRayOffset, -collider.bounds.extents.y), Vector2.down, castLength + 0.1f, detectionMask);
     }
 
     private void HandleGravity()
@@ -360,7 +367,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void WallSlideDetection(out Vector2 wallNormal)
     {
-        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, solidsLayer);
+        RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, new Vector2(0.1f, 2.0f * collider.bounds.extents.y), 0.0f, new Vector2(xFacingDirection, 0.0f), castLength + collider.bounds.extents.x, detectionMask);
         wallNormal = hit.normal;
 
         if (hit && yVelocity < 0.0f && playerState != States.Dashing)
@@ -403,7 +410,7 @@ public class PlayerMovement : MonoBehaviour
 
         while (dashTimer < dashDuration)
         {
-            RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, collider.bounds.size, 0.0f, dashVector.normalized, dashVector.magnitude * Time.fixedDeltaTime + castLength, solidsLayer);
+            RaycastHit2D hit = Physics2D.BoxCast(rigidBody.position, collider.bounds.size, 0.0f, dashVector.normalized, dashVector.magnitude * Time.fixedDeltaTime + castLength, detectionMask);
 
             float dashSlowDown = Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer) * Mathf.Lerp(0.005f, dashDuration, dashTimer);
             dashVector *= 1.0f - dashSlowDown;
@@ -413,19 +420,30 @@ public class PlayerMovement : MonoBehaviour
 
             if (hit)
             {
-                Vector2 hitNormal = hit.normal;
-                hitNormal = -1.0f * new Vector2(Mathf.Abs(hitNormal.x), Mathf.Abs(hitNormal.y));
-
-                if (hitNormal.x <= 0.2f && hitNormal.x >= -0.2f)
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer(breakableLayer.ToString()))
                 {
-                    hitNormal.x = 1.0f;
-                }
-                if (hitNormal.y <= 0.2f && hitNormal.y >= -0.2f)
+                    hit.collider.gameObject.TryGetComponent(out Tilemap tilemap);
+                    Vector2 tilePoint = hit.point + dashVector.normalized * 0.01f;
+                    Vector3Int gridCell = tilemap.WorldToCell(tilePoint);
+                    tilemap.SetTile(gridCell, null);
+                } else
                 {
-                    hitNormal.y = 1.0f;
+                    Vector2 hitNormal = hit.normal;
+                    hitNormal = -1.0f * new Vector2(Mathf.Abs(hitNormal.x), Mathf.Abs(hitNormal.y));
+
+                    if (hitNormal.x <= 0.2f && hitNormal.x >= -0.2f)
+                    {
+                        hitNormal.x = 1.0f;
+                    }
+                    if (hitNormal.y <= 0.2f && hitNormal.y >= -0.2f)
+                    {
+                        hitNormal.y = 1.0f;
+                    }
+
+                    dashVector *= hitNormal;
                 }
 
-                dashVector *= hitNormal;
+                OnDashHitVisual?.Invoke();
             }
 
             dashTimer += Time.fixedDeltaTime;
