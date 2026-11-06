@@ -662,14 +662,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
-  IgnoreTimeScale: 0
+  IgnoreTimeScale: 1
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
   UpdateMethod: 2
   BlendUpdateMethod: 1
   LensModeOverride:
     Enabled: 0
-    DefaultMode: 2
+    DefaultMode: 1
   DefaultBlend:
     Style: 1
     Time: 2
@@ -2033,7 +2033,7 @@ MonoBehaviour:
     m_Bits: 64
   breakableLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   respawnPoint: {fileID: 0}
 --- !u!61 &929619094
 BoxCollider2D:
