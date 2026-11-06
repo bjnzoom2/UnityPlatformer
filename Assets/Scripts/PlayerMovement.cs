@@ -22,6 +22,7 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rigidBody;
     private BoxCollider2D collider;
     private GameInputs inputs;
+    public GameObject respawnPoint;
 
     private float xVelocity = 0.0f;
     private float yVelocity = 0.0f;
@@ -451,15 +452,22 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()) && playerState != States.Dead)
+        if (playerState != States.Dead)
         {
-            playerState = States.Dead;
+            if (collision.gameObject.layer == LayerMask.NameToLayer(hazardsLayer.ToString()))
+            {
+                playerState = States.Dead;
 
-            rigidBody.linearVelocity = Vector2.zero;
-            xVelocity = 0.0f;
-            yVelocity = 0.0f;
+                rigidBody.linearVelocity = Vector2.zero;
+                xVelocity = 0.0f;
+                yVelocity = 0.0f;
 
-            OnDeathVisual?.Invoke();
+                OnDeathVisual?.Invoke();
+            }
+            else if (collision.gameObject.GetComponent<RespawnPoint>())
+            {
+                respawnPoint = collision.gameObject;
+            }
         }
     }
 }

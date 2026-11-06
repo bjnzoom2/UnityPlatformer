@@ -76,7 +76,8 @@ public class PlayerVisuals : MonoBehaviour
 
         yield return new WaitForSecondsRealtime(0.5f);
 
-        transform.position = Vector3.zero;
+        transform.position = new Vector3(movement.respawnPoint.transform.position.x, movement.respawnPoint.transform.position.y, 0.0f);
+
         renderer.enabled = true;
         movement.playerState = PlayerMovement.States.Airborne;
 
