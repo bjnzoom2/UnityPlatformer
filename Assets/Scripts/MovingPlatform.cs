@@ -2,15 +2,20 @@ using UnityEngine;
 
 public class MovingPlatform : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private Rigidbody2D rigidbody;
+    private float xValue = 0.0f;
+    private float timer = 0.0f;
+
+    private void Start()
     {
-        
+        rigidbody = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void FixedUpdate()
     {
-        
+        xValue = Mathf.Sin(timer) * 5.5f + 5.5f;
+        rigidbody.MovePosition(new Vector2(xValue, 0.0f));
+
+        timer += Time.fixedDeltaTime;
     }
 }
