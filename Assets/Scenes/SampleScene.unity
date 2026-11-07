@@ -327,7 +327,7 @@ GameObject:
   - component: {fileID: 406478002}
   - component: {fileID: 406478001}
   - component: {fileID: 406478004}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Moving Platform
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -509,7 +509,7 @@ Tilemap:
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.2509804, g: 0.8784314, b: 0.8156863, a: 1}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 27, y: 29, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
