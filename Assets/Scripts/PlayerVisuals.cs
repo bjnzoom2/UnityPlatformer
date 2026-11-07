@@ -91,10 +91,7 @@ public class PlayerVisuals : MonoBehaviour
 
     private IEnumerator DashHit()
     {
-        yield return null;
-        Time.timeScale = 0.0f;
-        yield return new WaitForSecondsRealtime(0.04f);
-        Time.timeScale = 1.0f;
+        yield break;
     }
 
     private void Death()

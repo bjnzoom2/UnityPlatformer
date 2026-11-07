@@ -83,6 +83,9 @@ public class PlayerMovement : MonoBehaviour
     public event Action OnDashHitVisual;
     public event Action OnDeathVisual;
 
+    static public event Action OnJumpAudio;
+    static public event Action OnLandAudio;
+
     #endregion
 
     private void Awake()
@@ -263,6 +266,7 @@ public class PlayerMovement : MonoBehaviour
         else if (!previousGroundCast && hit && playerState != States.Dashing)
         {
             OnLandVisual?.Invoke();
+            OnLandAudio?.Invoke();
         }
 
         previousGroundCast = hit;
@@ -321,6 +325,7 @@ public class PlayerMovement : MonoBehaviour
     {
         yVelocity = jumpPower;
         OnJumpVisual?.Invoke();
+        OnJumpAudio?.Invoke();
     }
 
     private IEnumerator JumpBuffer()
@@ -382,6 +387,7 @@ public class PlayerMovement : MonoBehaviour
         yVelocity = jumpPower;
         xFacingDirection = -xFacingDirection;
         playerState = States.Airborne;
+        OnJumpAudio?.Invoke();
     }
 
     private IEnumerator Dash()
