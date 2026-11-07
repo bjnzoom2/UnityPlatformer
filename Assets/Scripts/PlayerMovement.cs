@@ -428,10 +428,80 @@ public class PlayerMovement : MonoBehaviour
             {
                 if (hit.collider.gameObject.layer == LayerMask.NameToLayer(breakableLayer.ToString()))
                 {
-                    hit.collider.gameObject.TryGetComponent(out Tilemap tilemap);
-                    Vector2 tilePoint = hit.point + dashVector.normalized * 0.01f;
-                    Vector3Int gridCell = tilemap.WorldToCell(tilePoint);
-                    tilemap.SetTile(gridCell, null);
+                    if (hit.collider.gameObject.TryGetComponent(out Tilemap tilemap))
+                    {
+                        Vector2 hitNormal = hit.normal;
+                        float sample = 0.0f;
+
+                        if (Mathf.Abs(hitNormal.x) >= 0.5f)
+                        {
+                            Vector2 top = hit.centroid + new Vector2(0.0f, collider.bounds.extents.y);
+                            Vector2 bottom = hit.centroid - new Vector2(0.0f, collider.bounds.extents.y);
+
+                            Vector2 tilePoint = new();
+                            Vector3Int gridCell = new();
+
+                            while (sample < top.y - bottom.y)
+                            {
+                                if (sample != 0.0f) {
+                                    tilePoint = new Vector2(hit.point.x, bottom.y) + new Vector2(0.0f, sample) - new Vector2(hit.normal.x * 0.05f, 0.0f);
+                                } else
+                                {
+                                    tilePoint = new Vector2(hit.point.x, bottom.y) + new Vector2(0.0f, 0.02f) - new Vector2(hit.normal.x * 0.05f, 0.0f);
+                                }
+                                gridCell = tilemap.WorldToCell(tilePoint);
+
+                                if (tilemap.GetTile(gridCell) != null)
+                                {
+                                    tilemap.SetTile(gridCell, null);
+                                }
+
+                                sample += tilemap.cellSize.y;
+                            }
+
+                            tilePoint = new Vector2(hit.point.x, top.y) + new Vector2(0.0f, 0.02f) - new Vector2(hit.normal.x * 0.05f, 0.0f);
+                            gridCell = tilemap.WorldToCell(tilePoint);
+
+                            if (tilemap.GetTile(gridCell) != null)
+                            {
+                                tilemap.SetTile(gridCell, null);
+                            }
+                        } else if (Mathf.Abs(hitNormal.y) >= 0.5f)
+                        {
+                            Vector2 right = hit.centroid + new Vector2(collider.bounds.extents.x, 0.0f);
+                            Vector2 left = hit.centroid - new Vector2(collider.bounds.extents.x, 0.0f);
+
+                            Vector2 tilePoint = new();
+                            Vector3Int gridCell = new();
+
+                            while (sample < right.x - left.x)
+                            {
+                                if (sample != 0.0f)
+                                {
+                                    tilePoint = new Vector2(left.x, hit.point.y) + new Vector2(sample, 0.0f) - new Vector2(0.0f, hit.normal.y * 0.05f);
+                                } else
+                                {
+                                    tilePoint = new Vector2(left.x, hit.point.y) + new Vector2(0.02f, 0.0f) - new Vector2(0.0f, hit.normal.y * 0.05f);
+                                }
+                                gridCell = tilemap.WorldToCell(tilePoint);
+
+                                if (tilemap.GetTile(gridCell) != null)
+                                {
+                                    tilemap.SetTile(gridCell, null);
+                                }
+
+                                sample += tilemap.cellSize.x;
+                            }
+
+                            tilePoint = new Vector2(right.x, hit.point.y) + new Vector2(0.02f, 0.0f) - new Vector2(0.0f, hit.normal.y * 0.05f);
+                            gridCell = tilemap.WorldToCell(tilePoint);
+
+                            if (tilemap.GetTile(gridCell) != null)
+                            {
+                                tilemap.SetTile(gridCell, null);
+                            }
+                        }
+                    }
                 } else
                 {
                     Vector2 hitNormal = hit.normal;
